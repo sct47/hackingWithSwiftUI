@@ -14,13 +14,13 @@ struct ContentView: View {
     @State private var shouldWin = Bool.random
     @State private var playerScore = 0
     @State private var scoreTitle = ""
+    @State private var showingScore = false
     
     var body: some View {
-        NavigationView {
             VStack {
                 Text("Player Score: \(playerScore)")
                 Text("Computers Move: \(game[gameChoice])")
-                
+                Text("You should \(shouldWin() ? "Win" : "Lose")")
                 HStack {
                     ForEach(0 ..< game.count) { number in
                         Button(action: {
@@ -34,8 +34,16 @@ struct ContentView: View {
                     }
                 }
             }
-        }
-        .navigationTitle("Rock Paper Scissors")
+            .alert(isPresented: $showingScore) {
+                Alert(title: Text(scoreTitle), message: Text("Your score is \(self.playerScore)"), dismissButton: .default(Text("Continue")) {
+                    self.restartGame()
+                })
+            }
+    }
+    
+    func restartGame() {
+        gameChoice = Int.random(in: 0...2)
+        shouldWin = Bool.random
     }
     
     func buttonTapped(_ number: Int) {
@@ -59,7 +67,7 @@ struct ContentView: View {
                 } else if number == 1 {
                     scoreTitle = "Draw!"
                 } else {
-                    playerScore -= 0
+                    playerScore -= 1
                     scoreTitle = "You lose!"
                 }
             case 2:
@@ -69,15 +77,50 @@ struct ContentView: View {
                 } else if number == 2 {
                     scoreTitle = "Draw!"
                 } else {
-                    playerScore -= 0
+                    playerScore -= 1
                     scoreTitle = "You lose!"
                 }
             default:
-                return
+                print("Error")
             }
         } else {
             // handle when they should lose
+            switch gameChoice {
+            case 0:
+                if number == 0 {
+                    scoreTitle = "Draw!"
+                } else if number == 1 {
+                    scoreTitle = "You lose!"
+                    playerScore -= 1
+                } else {
+                    scoreTitle = "You win!"
+                    playerScore += 1
+                }
+            case 1:
+                if number == 1 {
+                    scoreTitle = "Draw!"
+                } else if number == 0 {
+                    scoreTitle = "You win!"
+                    playerScore += 1
+                } else {
+                    scoreTitle = "You lose!"
+                    playerScore -= 1
+                }
+            case 2:
+                if number == 2 {
+                    scoreTitle = "Draw!"
+                } else if number == 0 {
+                    scoreTitle = "You Lose!"
+                    playerScore -= 1
+                } else {
+                    scoreTitle = "You win!"
+                    playerScore += 1
+                }
+            default:
+                print("Error")
+            }
         }
+        showingScore = true
     }
 }
 
