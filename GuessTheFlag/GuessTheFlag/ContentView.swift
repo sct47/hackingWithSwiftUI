@@ -14,6 +14,11 @@ struct ContentView: View {
     @State private var playerScore = 0
     @State private var showingScore = false
     @State private var scoreTitle = ""
+    @State private var correctGuess = false
+    @State private var rotation = 0.0
+    @State private var fade = 1.0
+    @State private var shakes = 0
+    @State private var guess = 0
     
     var body: some View {
         ZStack {
@@ -31,12 +36,24 @@ struct ContentView: View {
                 
                 ForEach(0 ..< 3) { number in
                     Button(action: {
-                        self.flagTapped(number)
-                    }) {
+                        withAnimation() {
+                            self.flagTapped(number)
+                            if correctGuess {
+                                self.rotation += 360
+                            } else {
+                                self.shakes += 1
+                            }
+                            self.fade = 0.2
+//                            self.askQuestion()
+                        }
+                        
+                    }){
                         Image(self.countries[number])
                             .renderingMode(.original)
                             .flagImage()
-
+                            .rotation3DEffect(number == correctAnswer ? .degrees(rotation) : .degrees(0), axis: (x: 0, y: 1, z:0))
+                            .opacity(number != correctAnswer ? fade : 1)
+                            .modifier(number == guess ? Shake(animatableData: CGFloat(shakes)) : Shake(animatableData: CGFloat(0)))
                     }
                 }
                 
@@ -44,6 +61,8 @@ struct ContentView: View {
                     .foregroundColor(.white)
                     .fontWeight(.black)
                     .font(.title2)
+                
+                
                     
             }
         }
@@ -58,16 +77,23 @@ struct ContentView: View {
         if number == correctAnswer {
             scoreTitle = "Correct"
             playerScore += 1
+            correctGuess = true
         } else {
             scoreTitle = "Wrong, thats the \(countries[number]) flag!"
             playerScore -= 1
+            correctGuess = false
+            guess = number
         }
-        
-        showingScore = true
+        let _ = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false, block: { timer in
+          self.showingScore = true
+        })
     }
     
     func askQuestion() {
         countries.shuffle()
+        fade = 1
+        rotation = 0
+        correctGuess = false
         correctAnswer = Int.random(in: 0...2)
     }
 }
@@ -82,9 +108,35 @@ struct FlagImage: ViewModifier {
     }
 }
 
+struct WrongPick: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .clipShape(Capsule())
+            .overlay(Capsule()
+                        .stroke(Color.red, lineWidth: 3))
+            .shadow(color: .red, radius: 5)
+    }
+}
+
+struct Shake: GeometryEffect {
+    var amount: CGFloat = 10
+    var shakesPerUnit = 3
+    var animatableData: CGFloat
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(CGAffineTransform(translationX:
+            amount * sin(animatableData * .pi * CGFloat(shakesPerUnit)),
+            y: 0))
+    }
+}
+
 extension View {
     func flagImage() -> some View {
         self.modifier(FlagImage())
+    }
+    
+    func wrongPick() -> some View {
+        self.modifier(WrongPick())
     }
 }
 
